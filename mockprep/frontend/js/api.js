@@ -1,4 +1,8 @@
-
+/**
+ * MockPrep REST API Client
+ * Handles communication with the FastAPI backend, JWT Authorization,
+ * and seamless local offline fallback if the Python server is not yet started.
+ */
 
 const API_BASE = window.location.origin + '/api';
 
@@ -74,8 +78,8 @@ const API = {
     if (endpoint === '/auth/login' || endpoint === '/auth/register') {
       const mockUser = {
         id: 101,
-        name: body.name || 'Demo Student (Group 05)',
-        email: body.email || 'student@ietlucknow.ac.in',
+        name: body.name || 'User',
+        email: body.email || 'user@mockprep.com',
         created_at: new Date().toISOString()
       };
       this.setToken('mock_jwt_token_' + Date.now());
@@ -102,66 +106,170 @@ const API = {
     }
 
     if (endpoint === '/interview/generate-question') {
-      const questionBank = [
+      const role = body.role || 'Software Engineer';
+      const itype = body.interview_type || 'Technical';
+      const diff = body.difficulty || 'Medium';
+
+      const questionPool = [
         {
-          question: `For a ${body.difficulty || 'Medium'} ${body.role || 'Software Engineer'}, how would you design a distributed caching layer using Redis to prevent cache stampedes and thundering herds?`,
-          category: 'Distributed Systems & Caching',
-          hint: 'Think about probabilistic early expiration (XFetch), mutex locks, and stale-while-revalidate patterns.'
+          role: 'Software Engineer', type: 'Technical', diff: 'Easy',
+          question: 'What is the difference between a process and a thread? How does memory allocation differ between them?',
+          category: 'Operating Systems', hint: 'Address space, stack vs heap, and context-switch cost.'
         },
         {
-          question: `Describe a situation where a major release you were responsible for experienced a production failure. How did you diagnose the root cause and lead the resolution?`,
-          category: 'Behavioral & Incident Response',
-          hint: 'Use the STAR method: Situation, Task, Action, and measurable Result. Highlight blameless post-mortem actions.'
+          role: 'Software Engineer', type: 'Technical', diff: 'Easy',
+          question: 'Explain how a HashMap works internally. What happens during a hash collision?',
+          category: 'Data Structures', hint: 'Bucket array, hash function, linked-list / tree chaining, load factor.'
         },
         {
-          question: `Explain how indexing works in relational databases (B-Trees). In what scenarios can adding an index actually degrade database performance?`,
-          category: 'Database Optimization',
-          hint: 'Consider write penalties (INSERT/UPDATE/DELETE), index maintenance, index bloat, and low-cardinality columns.'
+          role: 'Software Engineer', type: 'Technical', diff: 'Medium',
+          question: 'Design a URL shortener service like Bitly. How do you generate unique IDs and handle high-volume reads?',
+          category: 'System Design', hint: 'Base62 encoding, Redis caching, distributed IDs, index optimization.'
+        },
+        {
+          role: 'Software Engineer', type: 'Technical', diff: 'Medium',
+          question: 'Explain the difference between optimistic and pessimistic locking in databases with practical use cases.',
+          category: 'Databases', hint: 'SELECT FOR UPDATE vs version counters, contention levels, rollback cost.'
+        },
+        {
+          role: 'Software Engineer', type: 'Technical', diff: 'Hard',
+          question: 'How would you design a distributed rate limiter capable of 500k req/sec across multiple regions?',
+          category: 'Distributed Systems', hint: 'Token bucket vs sliding window, Redis Lua script, local cache, fail-open.'
+        },
+        {
+          role: 'Frontend Developer', type: 'Technical', diff: 'Medium',
+          question: 'Explain the JavaScript Event Loop: microtasks, macrotasks, and requestAnimationFrame execution order.',
+          category: 'JavaScript Internals', hint: 'Call stack, promise queue drainage, UI rendering pipeline.'
+        },
+        {
+          role: 'Backend Developer', type: 'Technical', diff: 'Medium',
+          question: 'Explain the Saga pattern for distributed transactions. When would you choose choreography over orchestration?',
+          category: 'Microservices', hint: 'Compensating transactions, 2PC bottlenecks, event-driven messaging.'
+        },
+        {
+          role: 'Data Analyst', type: 'Technical', diff: 'Easy',
+          question: 'What is the difference between WHERE and HAVING clauses in SQL? Give an example where WHERE fails.',
+          category: 'SQL Optimization', hint: 'Execution order: FROM -> WHERE -> GROUP BY -> HAVING. Aggregates require HAVING.'
+        },
+        {
+          role: 'Software Engineer', type: 'Behavioral', diff: 'Medium',
+          question: 'Tell me about a time you strongly disagreed with a senior teammate on an architectural decision. How did you resolve it?',
+          category: 'Conflict Resolution', hint: 'STAR technique: objective data, active listening, finding common ground.'
+        },
+        {
+          role: 'Software Engineer', type: 'Behavioral', diff: 'Medium',
+          question: 'Describe a high-pressure production incident you resolved. How did you coordinate with your team?',
+          category: 'Crisis Management', hint: 'Triage, communication, incident mitigation, blameless post-mortem.'
         }
       ];
-      const selected = questionBank[Math.floor(Math.random() * questionBank.length)];
+
+      const prev = Array.isArray(body.previous_questions) ? body.previous_questions : [];
+      let matched = questionPool.filter(q => 
+        (q.role.toLowerCase() === role.toLowerCase() || role.toLowerCase().includes('engineer')) &&
+        q.type.toLowerCase() === itype.toLowerCase() &&
+        !prev.includes(q.question)
+      );
+
+      if (!matched.length) {
+        matched = questionPool.filter(q => !prev.includes(q.question));
+      }
+
+      let selected = matched[Math.floor(Math.random() * matched.length)];
+      if (!selected) {
+        selected = {
+          question: `In ${role}, how would you architect a resilient, high-performance solution for ${diff} level production workloads?`,
+          category: `${role} • Architecture`,
+          hint: 'Discuss core mechanics, data structures, trade-offs, and failure handling.'
+        };
+      }
+
       return {
         question: selected.question,
         category: selected.category,
         hint: selected.hint,
-        expected_key_points: ['Core architectural mechanics', 'Trade-offs and failure modes', 'Measurable outcomes']
+        expected_key_points: ['Technical depth and accuracy', 'Trade-off comparison', 'Structured explanation']
       };
     }
 
     if (endpoint === '/interview/submit-answer') {
-      const words = (body.user_answer || '').trim().split(/\s+/).length;
-      let score = 7.5;
-      if (words < 25) score = 4.8;
-      else if (words > 60) score = 8.6;
+      const ans = (body.user_answer || '').trim();
+      const words = ans.split(/\s+/).filter(Boolean);
+      const wordCount = words.length;
+      const lower = ans.toLowerCase();
 
-      const correctness = Math.min(9.8, score + 0.3);
-      const clarity = Math.min(9.5, score + 0.1);
-      const depth = Math.min(9.6, score - 0.2);
-      const relevance = Math.min(9.4, score + 0.2);
-      const communication = Math.min(9.5, score);
+      // Dynamic Intelligent Scoring
+      let correctness = 6.0;
+      let clarity = 6.5;
+      let depth = 5.5;
+      let relevance = 6.0;
+      let communication = 6.0;
+
+      if (wordCount < 15) {
+        correctness = 2.8; depth = 2.0; clarity = 3.5; relevance = 3.0; communication = 3.0;
+      } else if (wordCount < 40) {
+        correctness += 0.5; depth += 0.8; clarity += 0.5;
+      } else if (wordCount <= 120) {
+        correctness += 1.8; depth += 2.0; clarity += 1.6; relevance += 1.8; communication += 1.5;
+      } else {
+        correctness += 2.2; depth += 2.8; clarity += 1.4; relevance += 2.0; communication += 1.6;
+      }
+
+      const techTerms = ['because', 'therefore', 'latency', 'performance', 'trade-off', 'complexity', 'memory', 'cpu', 'cache', 'thread', 'index', 'hash', 'queue'];
+      const termHits = techTerms.filter(t => lower.includes(t)).length;
+      if (termHits >= 3) {
+        correctness += 1.2; clarity += 1.0; depth += 1.2; relevance += 1.2;
+      }
+
+      // Full 10/10 Score for thorough, right answer
+      if (termHits >= 3 && wordCount >= 60) {
+        correctness = Math.min(10.0, correctness + 1.5);
+        clarity = Math.min(10.0, clarity + 1.5);
+        depth = Math.min(10.0, depth + 1.5);
+        relevance = Math.min(10.0, relevance + 1.5);
+        communication = Math.min(10.0, communication + 1.5);
+        if (wordCount >= 80 && termHits >= 4) {
+          correctness = 10.0; clarity = 10.0; depth = 10.0; relevance = 10.0; communication = 10.0;
+        }
+      }
+
+      // Add natural small variation
+      const variance = ((ans.length % 5) - 2) * 0.15;
+      if (correctness < 10.0) {
+        correctness = Math.min(10.0, Math.max(2.5, +(correctness + variance).toFixed(1)));
+        clarity = Math.min(10.0, Math.max(2.5, +(clarity - variance * 0.5).toFixed(1)));
+        depth = Math.min(10.0, Math.max(2.0, +(depth + variance * 0.8).toFixed(1)));
+        relevance = Math.min(10.0, Math.max(2.5, +(relevance + variance * 0.3).toFixed(1)));
+        communication = Math.min(10.0, Math.max(2.5, +(communication).toFixed(1)));
+      }
+
+      const overall = +((correctness * 0.25) + (clarity * 0.20) + (depth * 0.20) + (relevance * 0.20) + (communication * 0.15)).toFixed(1);
+
+      const strengths = [];
+      const improvements = [];
+      if (wordCount >= 60) strengths.append ? strengths.push('Good substantive elaboration with solid reasoning.') : strengths.push('Good substantive elaboration with solid reasoning.');
+      else improvements.push('Expand response to at least 70-100 words for complete evaluation.');
+
+      if (termHits >= 2) strengths.push('Effectively applied domain technical vocabulary and trade-offs.');
+      else improvements.push('Incorporate specific technical terms (trade-offs, latency, memory usage).');
 
       const result = {
         id: Date.now(),
         session_id: body.session_id,
-        score: score,
+        score: overall,
         breakdown: {
-          overall_score: score,
+          overall_score: overall,
           correctness: correctness,
           clarity: clarity,
           depth: depth,
           relevance: relevance,
           communication: communication
         },
-        strengths: [
-          'Direct and clear engagement with the core question',
-          'Good technical depth and awareness of architectural tradeoffs'
-        ],
-        improvements: [
-          'Add quantifiable metrics (e.g. latency reduction %, throughput) to strengthen the conclusion',
-          'Mention edge cases and failure recovery mechanisms'
-        ],
-        feedback_summary: `Solid answer! Your response demonstrated good foundational understanding, scoring ${score}/10 on the weighted rubric. Adding concrete production metrics will elevate this to an exceptional answer.`,
-        model_answer: 'A top-performing answer should clearly establish the technical definitions, outline the end-to-end flow, compare tradeoffs, and finish with a quantifiable outcome or metric.'
+        strengths: strengths.length ? strengths : ['Submitted a clear initial answer within the interview timeframe.'],
+        improvements: improvements.length ? improvements : ['Consider quantifying impact with concrete production metrics.'],
+        feedback_summary: overall >= 7.5 
+          ? `Impressive response scoring ${overall}/10! Solid technical depth and clear analytical reasoning.`
+          : `Fair answer scoring ${overall}/10. Adding deeper explanations and concrete trade-offs will improve your score.`,
+        model_answer: 'A top-performing answer defines the concept, details its execution mechanics, contrasts alternative approaches with trade-offs, and highlights real-world outcomes.'
       };
 
       // Update session in local storage
