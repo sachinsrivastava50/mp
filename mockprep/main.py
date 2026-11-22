@@ -16,7 +16,6 @@ from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 import jwt
-from passlib.context import CryptContext
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 SECRET_KEY   = os.getenv("SECRET_KEY", "mockprep_secret_iet_lucknow_group05_2026")
