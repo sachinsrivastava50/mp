@@ -104,11 +104,20 @@ def get_db():
         db.close()
 
 # ─── Auth helpers ─────────────────────────────────────────────────────────────
-pwd_ctx  = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 security = HTTPBearer(auto_error=False)
 
-def hash_pw(pw):       return pwd_ctx.hash(pw)
-def verify_pw(pw, hpw):return pwd_ctx.verify(pw, hpw)
+def hash_pw(pw: str) -> str:
+    pw_bytes = pw.encode("utf-8")[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pw_bytes, salt).decode("utf-8")
+
+def verify_pw(pw: str, hpw: str) -> bool:
+    try:
+        pw_bytes = pw.encode("utf-8")[:72]
+        return bcrypt.checkpw(pw_bytes, hpw.encode("utf-8"))
+    except Exception:
+        return False
 
 def make_token(user_id: int) -> str:
     exp = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRE)
@@ -449,16 +458,17 @@ def generate_question(role: str, itype: str, diff: str, previous: list) -> dict:
     }
 
 
-# ── Intelligent AI Answer Evaluation Engine (Full 10/10 Score Capability) ─────
+# ── Intelligent AI Answer Evaluation Engine (Strict Invalid / Zero Scoring) ───
 def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str, secs: int) -> dict:
     """
     Evaluates student response dynamically based on:
     - Semantic keyword matching against the question domain
+    - Validity & relevance checks (returns 0 or 1 for invalid/off-topic answers)
     - Length & substantive depth
     - Structural transitions (trade-offs, analytical phrasing)
-    - Vocabulary diversity (anti-repetition check)
+    - Vocabulary diversity (anti-repetition / spam check)
     - Behavioral STAR methodology (for behavioral questions)
-    Provides varying, fair, realistic scores out of 10.0 (full 10 marks awarded for correct answers).
+    Provides realistic scores: 0.0 - 1.0 for invalid/off-topic answers, up to 10.0 for correct answers.
     """
     ans_clean = (answer or "").strip()
     words = ans_clean.split()
@@ -466,36 +476,73 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
     al = ans_clean.lower()
     ql = question.lower()
 
-    # 1. Check for empty or trivial answers
-    if word_count < 10:
+    # Common invalid / evasive phrases
+    evasive_phrases = [
+        "i don't know", "i dont know", "dont know", "no idea", "not sure",
+        "skip", "pass", "n/a", "none", "nothing", "hello", "hi", "test",
+        "asdf", "qwerty", "xyz", "idk", "ok", "yes", "no", "cant answer"
+    ]
+
+    # Clean text of punctuation to test if it's pure non-content
+    text_only = re.sub(r'[^a-z0-9]', '', al)
+
+    # 1. Zero Score Check: Empty, single-word, keyboard mash, or direct evasive phrase
+    is_evasive = any(al == p or al.startswith(p + " ") or al.endswith(" " + p) for p in evasive_phrases)
+    if word_count < 4 or len(text_only) < 10 or is_evasive:
         return {
-            "overall_score": 2.5,
-            "correctness": 2.5,
-            "clarity": 3.0,
-            "depth": 1.5,
-            "relevance": 3.0,
-            "communication": 2.5,
+            "overall_score": 0.0,
+            "correctness": 0.0,
+            "clarity": 0.0,
+            "depth": 0.0,
+            "relevance": 0.0,
+            "communication": 0.0,
             "breakdown": {
-                "overall_score": 2.5,
-                "correctness": 2.5,
-                "clarity": 3.0,
-                "depth": 1.5,
-                "relevance": 3.0,
-                "communication": 2.5
+                "overall_score": 0.0,
+                "correctness": 0.0,
+                "clarity": 0.0,
+                "depth": 0.0,
+                "relevance": 0.0,
+                "communication": 0.0
             },
-            "strengths": ["Answer submitted within the allotted session time."],
+            "strengths": ["Session recorded."],
             "improvements": [
-                "Your answer is too brief to evaluate. Provide a complete, detailed response.",
-                "Define the core concept clearly and explain the underlying mechanics.",
-                "Include a concrete technical example or practical scenario."
+                "Your answer is invalid or too brief to evaluate. Provide a real, comprehensive response.",
+                "Address the specific technical question asked rather than leaving placeholder text.",
+                "Explain the fundamental concepts, underlying mechanics, and trade-offs."
             ],
-            "feedback_summary": "Incomplete response scoring 2.5/10. An interview answer requires substantive explanation and real examples.",
-            "model_answer": "A strong answer should define the fundamental concept, discuss architecture or mechanics, outline advantages and trade-offs, and conclude with an illustrative real-world example."
+            "feedback_summary": "Invalid answer scoring 0.0/10. The response is blank, trivial, or placeholder text. Please answer the question thoroughly.",
+            "model_answer": "A top-tier answer defines the fundamental concept, discusses architecture or mechanics, outlines advantages and trade-offs, and concludes with an illustrative real-world example."
         }
 
-    # 2. Vocabulary diversity (checks for spam / repeated words)
+    # 2. Vocabulary diversity (anti-spam / anti-repetition check)
     unique_words = len(set(w.lower() for w in words))
     diversity_ratio = unique_words / max(word_count, 1)
+
+    # If user spammed the same word repeatedly (e.g. "thread thread thread")
+    if diversity_ratio < 0.35:
+        return {
+            "overall_score": 0.0,
+            "correctness": 0.0,
+            "clarity": 0.0,
+            "depth": 0.0,
+            "relevance": 0.0,
+            "communication": 0.0,
+            "breakdown": {
+                "overall_score": 0.0,
+                "correctness": 0.0,
+                "clarity": 0.0,
+                "depth": 0.0,
+                "relevance": 0.0,
+                "communication": 0.0
+            },
+            "strengths": [],
+            "improvements": [
+                "Repetitive text detected. Do not repeat words to inflate length.",
+                "Provide a genuine, structured technical explanation with clear reasoning."
+            ],
+            "feedback_summary": "Invalid response scoring 0.0/10 due to repetitive spam text. Please submit a genuine answer.",
+            "model_answer": "A strong answer should define the concept clearly, analyze mechanics, and contrast trade-offs."
+        }
 
     # 3. Extract relevant domain keywords from question & question bank
     matched_q = next((q for q in QUESTION_BANK if q["question"] == question), None)
@@ -510,16 +557,72 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
     keyword_hits = sum(1 for kw in expected_keywords if kw in al)
     keyword_coverage = keyword_hits / max(len(expected_keywords), 1)
 
-    # 4. Dimension Baselines
-    c_base = 5.5
-    cl_base = 6.0
-    d_base = 5.0
-    r_base = 5.5
-    cm_base = 6.0
+    # 4. Off-Topic / Irrelevant Check (Score 0 or 1)
+    if keyword_hits == 0:
+        # Zero domain overlap: student wrote about something completely irrelevant
+        score_val = 0.0 if word_count < 25 else 1.0
+        return {
+            "overall_score": score_val,
+            "correctness": score_val,
+            "clarity": 1.0 if score_val == 1.0 else 0.0,
+            "depth": 0.0,
+            "relevance": 0.0,
+            "communication": 1.0 if score_val == 1.0 else 0.0,
+            "breakdown": {
+                "overall_score": score_val,
+                "correctness": score_val,
+                "clarity": 1.0 if score_val == 1.0 else 0.0,
+                "depth": 0.0,
+                "relevance": 0.0,
+                "communication": 1.0 if score_val == 1.0 else 0.0
+            },
+            "strengths": ["Clear sentence formulation."] if score_val == 1.0 else [],
+            "improvements": [
+                "Your response is off-topic. It does not contain any relevant concepts for this question.",
+                "Focus on the actual topic asked in the interview prompt.",
+                f"Expected core topics for this question: {', '.join(expected_keywords[:4])}."
+            ],
+            "feedback_summary": f"Irrelevant answer scoring {score_val}/10. The response does not address the question asked. Please answer the specific question.",
+            "model_answer": f"A relevant answer must directly address the question by discussing {', '.join(expected_keywords[:3]) if expected_keywords else 'the core technical mechanics'} with practical trade-offs."
+        }
 
-    # 5. Length & Depth Grading
+    # Extremely minimal attempt with < 15 words (not a valid full answer)
+    if word_count < 15:
+        return {
+            "overall_score": 1.0,
+            "correctness": 1.0,
+            "clarity": 1.0,
+            "depth": 0.5,
+            "relevance": 1.5,
+            "communication": 1.0,
+            "breakdown": {
+                "overall_score": 1.0,
+                "correctness": 1.0,
+                "clarity": 1.0,
+                "depth": 0.5,
+                "relevance": 1.5,
+                "communication": 1.0
+            },
+            "strengths": ["Submitted an attempt."] if keyword_hits > 0 else [],
+            "improvements": [
+                "Your response is far too brief (less than 15 words) to demonstrate technical understanding.",
+                "Define the fundamental concept and explain the underlying architecture.",
+                "Include a concrete technical explanation with real-world examples."
+            ],
+            "feedback_summary": "Insufficient response scoring 1.0/10. An answer with fewer than 15 words cannot adequately answer technical interview questions.",
+            "model_answer": "An acceptable answer must explain the definition, underlying architecture, and trade-offs in depth."
+        }
+
+    # 5. Dimension Baselines for Valid Answers
+    c_base = 5.0
+    cl_base = 5.5
+    d_base = 4.5
+    r_base = 5.0
+    cm_base = 5.5
+
+    # 6. Length & Depth Grading
     if word_count < 25:
-        c_base -= 1.5; d_base -= 2.0; cl_base -= 1.0; cm_base -= 1.0
+        c_base -= 1.0; d_base -= 1.5; cl_base -= 0.8; cm_base -= 0.8
     elif 25 <= word_count < 60:
         c_base += 1.0; d_base += 1.2; cl_base += 1.0; cm_base += 1.0
     elif 60 <= word_count <= 180:
@@ -527,7 +630,7 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
     elif word_count > 180:
         c_base += 2.6; d_base += 3.2; cl_base += 1.8; cm_base += 1.8
 
-    # 6. Keyword & Relevance Impact (rewards accurate answers up to 10)
+    # 7. Keyword & Relevance Impact (rewards accurate answers up to 10)
     if keyword_coverage > 0.4:
         c_base += 2.4
         r_base += 2.6
@@ -537,10 +640,10 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
         r_base += 1.4
         d_base += 0.8
     else:
-        c_base -= 1.5
-        r_base -= 2.0
+        c_base -= 1.0
+        r_base -= 1.5
 
-    # 7. Analytical & Structural Transitions
+    # 8. Analytical & Structural Transitions
     transitions = [
         "because", "therefore", "for example", "specifically", "in contrast",
         "trade-off", "tradeoff", "latency", "performance", "scalability",
@@ -556,7 +659,7 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
         cl_base += 1.2
         cm_base += 1.2
 
-    # 8. Behavioral STAR Check
+    # 9. Behavioral STAR Check
     if itype.lower() == "behavioral":
         star_situation = bool(re.search(r'(in my|when i was|at my|during|while working|we faced)', al))
         star_task = bool(re.search(r'(my role|responsible for|objective was|task was|needed to|goal was)', al))
@@ -570,13 +673,6 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
         elif star_score <= 1:
             r_base -= 1.0
             d_base -= 1.0
-
-    # 9. Penalize Spam or Repetitive Text
-    if diversity_ratio < 0.45:
-        c_base -= 3.5
-        d_base -= 3.5
-        cl_base -= 3.0
-        r_base -= 3.0
 
     # 10. Difficulty Adjustment
     if diff.lower() == "hard":
@@ -604,18 +700,18 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
         c_base += salt
         d_base -= salt * 0.5
 
-    # Clamp scores between 2.0 and 10.0 (Full 10 marks support)
-    correctness = round(min(10.0, max(2.0, c_base)), 1)
-    clarity = round(min(10.0, max(2.5, cl_base)), 1)
-    depth = round(min(10.0, max(2.0, d_base)), 1)
-    relevance = round(min(10.0, max(2.0, r_base)), 1)
-    communication = round(min(10.0, max(2.5, cm_base)), 1)
+    # Clamp scores between 1.5 and 10.0 for genuine attempts
+    correctness = round(min(10.0, max(1.5, c_base)), 1)
+    clarity = round(min(10.0, max(2.0, cl_base)), 1)
+    depth = round(min(10.0, max(1.5, d_base)), 1)
+    relevance = round(min(10.0, max(1.5, r_base)), 1)
+    communication = round(min(10.0, max(2.0, cm_base)), 1)
 
     # Weighted Overall: Correctness 25%, Clarity 20%, Depth 20%, Relevance 20%, Communication 15%
     overall = round(
         correctness * 0.25 + clarity * 0.20 + depth * 0.20 + relevance * 0.20 + communication * 0.15, 1
     )
-    overall = min(10.0, max(2.5, overall))
+    overall = min(10.0, max(1.5, overall))
 
     # Dynamic Strengths & Improvements
     strengths, improvements = [], []
@@ -713,6 +809,31 @@ def login(body: LoginIn, db: Session = Depends(get_db)):
     return {"access_token": make_token(user.id), "token_type": "bearer",
             "user": {"id": user.id, "name": user.name, "email": user.email,
                      "created_at": user.created_at.isoformat()}}
+
+@app.post("/api/auth/demo")
+def demo_login(db: Session = Depends(get_db)):
+    """One-click instant demo login: finds or auto-creates demo student account."""
+    demo_email = "demo.student@mockprep.com"
+    user = db.query(User).filter(User.email == demo_email).first()
+    if not user:
+        user = User(
+            name="User",
+            email=demo_email,
+            hashed_password=hash_pw("mockprep_demo_2026")
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return {
+        "access_token": make_token(user.id),
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "created_at": user.created_at.isoformat()
+        }
+    }
 
 @app.get("/api/auth/me")
 def me(u: User = Depends(current_user)):
