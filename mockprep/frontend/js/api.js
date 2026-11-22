@@ -258,8 +258,6 @@ const API = {
         correctness += 2.2; depth += 2.8; clarity += 1.4; relevance += 2.0; communication += 1.6;
       }
 
-      const techTerms = ['because', 'therefore', 'latency', 'performance', 'trade-off', 'complexity', 'memory', 'cpu', 'cache', 'thread', 'index', 'hash', 'queue'];
-      const termHits = techTerms.filter(t => lower.includes(t)).length;
       if (termHits >= 3) {
         correctness += 1.2; clarity += 1.0; depth += 1.2; relevance += 1.2;
       }
