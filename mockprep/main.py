@@ -25,17 +25,31 @@ TOKEN_EXPIRE = 60 * 24 * 7          # 7 days in minutes
 
 BASE_DIR = Path(__file__).parent
 
-# ── Frontend path: check multiple locations so it works locally AND on Render ─
+# ── Frontend path: check all possible locations locally and on Render ─────────
 def _find_frontend() -> Path:
     candidates = [
-        BASE_DIR / "frontend",           # local: mockprep/frontend
-        Path.cwd() / "frontend",         # Render: cwd/frontend
-        Path("/opt/render/project/src/frontend"),  # Render absolute fallback
+        BASE_DIR / "frontend",
+        BASE_DIR / "mockprep" / "frontend",
+        Path.cwd() / "frontend",
+        Path.cwd() / "mockprep" / "frontend",
+        BASE_DIR.parent / "frontend",
+        BASE_DIR.parent / "mockprep" / "frontend",
+        Path("/opt/render/project/src/frontend"),
+        Path("/opt/render/project/src/mockprep/frontend"),
     ]
     for p in candidates:
         if p.is_dir() and (p / "index.html").is_file():
             return p
-    return BASE_DIR / "frontend"          # default even if missing
+
+    # Recursive fallback search
+    for root in [BASE_DIR, Path.cwd(), BASE_DIR.parent]:
+        try:
+            for match in root.glob("**/frontend/index.html"):
+                return match.parent
+        except Exception:
+            pass
+
+    return BASE_DIR / "frontend"
 
 FRONTEND_DIR = _find_frontend()
 DB_URL       = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'mockprep.db'}")
@@ -981,20 +995,33 @@ def debug_info():
     }
 
 # ── Serve Frontend (SPA) ──────────────────────────────────────────────────────
-if FRONTEND_DIR.is_dir():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+if not FRONTEND_DIR.is_dir() or not (FRONTEND_DIR / "index.html").is_file():
+    FRONTEND_DIR = _find_frontend()
 
-    @app.get("/{full_path:path}", include_in_schema=False)
-    def serve_spa(full_path: str):
+if FRONTEND_DIR.is_dir():
+    try:
+        app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+    except Exception:
+        pass
+
+@app.get("/{full_path:path}", include_in_schema=False)
+def serve_spa(full_path: str):
+    global FRONTEND_DIR
+    if not FRONTEND_DIR.is_dir() or not (FRONTEND_DIR / "index.html").is_file():
+        FRONTEND_DIR = _find_frontend()
+
+    if FRONTEND_DIR.is_dir() and (FRONTEND_DIR / "index.html").is_file():
         file_path = FRONTEND_DIR / full_path
         if file_path.is_file():
             return FileResponse(str(file_path))
         return FileResponse(str(FRONTEND_DIR / "index.html"))
-else:
-    @app.get("/", include_in_schema=False)
-    def root():
-        return {
-            "msg": "API running. Frontend NOT found.",
-            "frontend_dir": str(FRONTEND_DIR),
+
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": "Frontend files not found",
+            "message": "Please ensure the 'frontend' folder with index.html is committed in your repository.",
+            "searched_dir": str(FRONTEND_DIR),
             "debug_url": "/api/debug"
         }
+    )
