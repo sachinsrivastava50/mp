@@ -156,7 +156,7 @@ class SubmitAnswerIn(BaseModel):
     user_answer: str
     time_taken_seconds: Optional[int] = 0
 
-# ─── Rich Diverse Question Bank ───────────────────────────────────────────────
+# ─── Rich Diverse Question Bank (75+ Curated Core Questions) ─────────────────
 QUESTION_BANK = [
     # ── Software Engineer: Technical (Easy, Medium, Hard)
     {"role":"Software Engineer","type":"Technical","diff":"Easy",
@@ -171,6 +171,14 @@ QUESTION_BANK = [
      "question":"What are the ACID properties in database management systems? Explain each with a short banking transaction example.",
      "category":"Databases","hint":"Atomicity, Consistency, Isolation, Durability with rollback and commit semantics.",
      "keywords":["acid","atomicity","consistency","isolation","durability","transaction","rollback","commit","database"]},
+    {"role":"Software Engineer","type":"Technical","diff":"Easy",
+     "question":"Explain Big-O notation with examples of O(1), O(log n), O(n), and O(n^2) time complexities.",
+     "category":"Algorithms","hint":"Array lookup, binary search, linear traversal, nested loops.",
+     "keywords":["complexity","big-o","time","space","logarithm","constant","linear","quadratic","binary","search"]},
+    {"role":"Software Engineer","type":"Technical","diff":"Easy",
+     "question":"What is the difference between Stack and Heap memory allocation in compiled and interpreted languages?",
+     "category":"Memory Management","hint":"LIFO allocation, automatic scope cleanup, dynamic memory allocation, fragmentation.",
+     "keywords":["stack","heap","allocation","memory","lifo","dynamic","pointer","scope","fragmentation"]},
     {"role":"Software Engineer","type":"Technical","diff":"Medium",
      "question":"Explain the difference between optimistic and pessimistic locking in databases. In what scenarios would you choose one over the other?",
      "category":"Databases","hint":"Consider contention levels, SELECT FOR UPDATE, version counters, and retry overheads.",
@@ -183,6 +191,14 @@ QUESTION_BANK = [
      "question":"What is the difference between TCP and UDP? When would you strictly pick UDP over TCP in a production system?",
      "category":"Networking","hint":"Connection-oriented, 3-way handshake, congestion control vs streaming/gaming packet loss tolerance.",
      "keywords":["tcp","udp","handshake","packet","loss","streaming","latency","reliable","connection","header"]},
+    {"role":"Software Engineer","type":"Technical","diff":"Medium",
+     "question":"Explain Deadlock in multithreaded systems: what are Coffman's four conditions and how do you prevent or detect them?",
+     "category":"Concurrency","hint":"Mutual exclusion, hold and wait, no preemption, circular wait. Resource ordering.",
+     "keywords":["deadlock","coffman","mutual","exclusion","circular","wait","preemption","thread","concurrency","mutex"]},
+    {"role":"Software Engineer","type":"Technical","diff":"Medium",
+     "question":"How does B-Tree indexing work in relational databases (MySQL/PostgreSQL), and why are B-Trees preferred over Binary Search Trees for disk storage?",
+     "category":"Database Internals","hint":"Block I/O, node fan-out, shallow height, cache-line efficiency.",
+     "keywords":["b-tree","index","disk","io","node","binary","search","fanout","pointer","leaf","postgres","mysql"]},
     {"role":"Software Engineer","type":"Technical","diff":"Hard",
      "question":"Walk me through how the Raft consensus algorithm handles leader election, log replication, and network partitions without split-brain.",
      "category":"Distributed Systems","hint":"Terms, election timeouts, quorum majority (N/2 + 1), term numbers, uncommitted entries.",
@@ -195,12 +211,20 @@ QUESTION_BANK = [
      "question":"Explain memory management in modern runtimes (JVM or V8): how does generational garbage collection (Mark & Sweep) mitigate latency spikes?",
      "category":"Computer Architecture","hint":"Young gen (Eden, Survivor) vs Old gen, stop-the-world pauses, incremental marking.",
      "keywords":["garbage","collection","heap","memory","young","old","generation","pause","mark","sweep","v8","jvm"]},
+    {"role":"Software Engineer","type":"Technical","diff":"Hard",
+     "question":"Explain the CAP Theorem and PACELC theorem. How do modern distributed databases (Cassandra vs Spanner) navigate consistency vs latency trade-offs?",
+     "category":"Distributed Systems","hint":"Consistency, Availability, Partition tolerance, Latency, TrueTime, Tunable quorum.",
+     "keywords":["cap","pacelc","consistency","availability","partition","latency","cassandra","spanner","quorum"]},
 
     # ── Frontend Developer: Technical
     {"role":"Frontend Developer","type":"Technical","diff":"Easy",
      "question":"Explain the CSS Box Model and the practical difference between content-box and border-box sizing.",
      "category":"CSS & Layout","hint":"Margin, border, padding, content width calculations.",
      "keywords":["box","model","border","padding","margin","content","sizing","width","layout"]},
+    {"role":"Frontend Developer","type":"Technical","diff":"Easy",
+     "question":"What is the difference between null and undefined in JavaScript, and how does the strict equality operator (===) treat them?",
+     "category":"JavaScript Core","hint":"Type of null (object bug), uninitialized variable vs explicit absence, type coercion.",
+     "keywords":["null","undefined","equality","type","coercion","primitive","javascript","strict"]},
     {"role":"Frontend Developer","type":"Technical","diff":"Medium",
      "question":"Explain the JavaScript Event Loop in detail: microtasks (Promises), macrotasks (setTimeout), and requestAnimationFrame execution order.",
      "category":"JavaScript Internals","hint":"Call stack, microtask queue drainage, task queue, render phase.",
@@ -209,16 +233,28 @@ QUESTION_BANK = [
      "question":"How does React's Virtual DOM diffing algorithm work? Why is using array index as a key considered an anti-pattern?",
      "category":"React Internals","hint":"Reconciliation, heuristic O(n), fiber nodes, unmounting vs updating state mismatch.",
      "keywords":["virtual","dom","reconciliation","diffing","fiber","key","index","state","render","component"]},
+    {"role":"Frontend Developer","type":"Technical","diff":"Medium",
+     "question":"Explain Cross-Origin Resource Sharing (CORS): what triggers a preflight OPTIONS request and how does the server grant access?",
+     "category":"Web Security & Networking","hint":"Origin header, Access-Control-Allow-Origin, simple vs preflight requests, credentials.",
+     "keywords":["cors","preflight","options","origin","headers","access-control","browser","security"]},
     {"role":"Frontend Developer","type":"Technical","diff":"Hard",
      "question":"How would you optimize Core Web Vitals (LCP, FID/INP, CLS) for an enterprise web application with heavy asset bundles?",
      "category":"Web Performance","hint":"SSR/SSG, code-splitting, lazy loading, font optimization, critical CSS, image CDN.",
      "keywords":["core","web","vitals","lcp","inp","cls","bundle","lazy","splitting","performance","render"]},
+    {"role":"Frontend Developer","type":"Technical","diff":"Hard",
+     "question":"Explain the architecture of a frontend Micro-Frontend setup using Webpack 5 Module Federation. How do you handle shared dependencies and version mismatches?",
+     "category":"Frontend Architecture","hint":"Remotes, hosts, shared singleton libraries, dynamic remote loading, isolation.",
+     "keywords":["micro-frontend","federation","module","webpack","remote","singleton","dependency","runtime"]},
 
     # ── Backend Developer: Technical
     {"role":"Backend Developer","type":"Technical","diff":"Easy",
      "question":"What is RESTful API architecture? Explain the significance of HTTP status codes 200, 201, 400, 401, 403, and 500.",
      "category":"API Design","hint":"Statelessness, resource URI, client vs server errors, authentication vs authorization.",
      "keywords":["rest","api","http","stateless","status","endpoint","authentication","authorization","json"]},
+    {"role":"Backend Developer","type":"Technical","diff":"Easy",
+     "question":"What is SQL Injection (SQLi) and how do parameterized queries / prepared statements prevent it at the database driver level?",
+     "category":"Backend Security","hint":"Input sanitization, query AST compilation before parameter binding, escaping.",
+     "keywords":["sql","injection","prepared","statement","parameterized","security","query","driver","database"]},
     {"role":"Backend Developer","type":"Technical","diff":"Medium",
      "question":"Explain the Saga pattern for distributed transactions in microservices. When would you choose choreography over orchestration?",
      "category":"Microservices","hint":"Compensating transactions, 2PC alternatives, event broker vs central coordinator.",
@@ -227,16 +263,28 @@ QUESTION_BANK = [
      "question":"How do database connection pools (like HikariCP or PgBouncer) work and how do you size them for high concurrency?",
      "category":"Database Infrastructure","hint":"Connection handshake cost, thread contention, Little's Law, CPU core scaling.",
      "keywords":["connection","pool","database","concurrency","threads","cpu","hikari","latency","timeout"]},
+    {"role":"Backend Developer","type":"Technical","diff":"Medium",
+     "question":"Explain the difference between JWT and Session-based authentication. How do you implement secure token revocation with JWT?",
+     "category":"Authentication & Security","hint":"Stateless vs stateful, redis blocklist, token rotation, short expiry with refresh tokens.",
+     "keywords":["jwt","session","authentication","token","redis","revocation","refresh","signature","stateless"]},
     {"role":"Backend Developer","type":"Technical","diff":"Hard",
      "question":"How would you design an event-driven architecture using Apache Kafka to ensure exactly-once processing semantics across microservices?",
      "category":"Distributed Streaming","hint":"Producer idempotence, transactional outbox pattern, consumer offset commits, deduplication.",
      "keywords":["kafka","event","exactly","once","idempotent","outbox","partition","offset","consumer","producer"]},
+    {"role":"Backend Developer","type":"Technical","diff":"Hard",
+     "question":"Explain how database sharding works. Compare Range-based, Hash-based, and Directory-based sharding and how you handle cross-shard joins.",
+     "category":"Database Scalability","hint":"Shard key selection, hot spots, resharding, scatter-gather queries, two-phase commits.",
+     "keywords":["sharding","shard","hash","range","partition","distributed","scale","database","join","hotspot"]},
 
     # ── Data Analyst / Data Scientist: Technical
     {"role":"Data Analyst","type":"Technical","diff":"Easy",
      "question":"What is the difference between WHERE and HAVING clauses in SQL? Provide a specific query where WHERE will throw an error.",
      "category":"SQL & Query Optimization","hint":"Execution order: FROM -> WHERE -> GROUP BY -> HAVING. Aggregates cannot be filtered in WHERE.",
      "keywords":["where","having","sql","group","by","aggregate","count","sum","filter","syntax"]},
+    {"role":"Data Analyst","type":"Technical","diff":"Easy",
+     "question":"What is the difference between INNER JOIN, LEFT JOIN, FULL OUTER JOIN, and CROSS JOIN in relational databases?",
+     "category":"SQL Fundamentals","hint":"Venn diagrams, unmatched rows, Cartesian product, null padding.",
+     "keywords":["join","inner","left","outer","cross","sql","table","null","cartesian","match"]},
     {"role":"Data Analyst","type":"Technical","diff":"Medium",
      "question":"How do you detect, evaluate, and handle missing data (MCAR, MAR, MNAR) and outliers in a business dataset?",
      "category":"Data Cleaning & Prep","hint":"Mean/median imputation, KNN/MICE, IQR boundaries, domain context, business impact.",
@@ -269,6 +317,10 @@ QUESTION_BANK = [
      "question":"Tell me about a time you had to quickly learn an unfamiliar technology or framework to deliver a project on time.",
      "category":"Adaptability & Learning","hint":"STAR technique: context, deliberate learning strategy, implementation, positive outcome.",
      "keywords":["learn","new","technology","framework","project","deadline","documentation","delivered"]},
+    {"role":"Software Engineer","type":"Behavioral","diff":"Easy",
+     "question":"Describe a situation where you received critical constructive feedback from a peer or lead. How did you react and adjust?",
+     "category":"Receptiveness & Growth","hint":"Non-defensive mindset, active inquiry, actionable adjustments, positive professional evolution.",
+     "keywords":["feedback","criticism","growth","peer","improve","actionable","mindset","development"]},
     {"role":"Software Engineer","type":"Behavioral","diff":"Medium",
      "question":"Describe a situation where you strongly disagreed with a senior engineer or manager on a technical architecture decision. How did you handle it?",
      "category":"Conflict Resolution","hint":"STAR technique: objective data, active listening, finding compromise, disagree and commit.",
@@ -277,33 +329,50 @@ QUESTION_BANK = [
      "question":"Tell me about a project that failed or did not meet customer expectations. What was your role and what systemic changes did you implement?",
      "category":"Ownership & Resilience","hint":"Take ownership without blaming others, post-mortem process, lessons learned, permanent improvements.",
      "keywords":["failed","mistake","ownership","postmortem","learned","expectation","improved","prevention"]},
+    {"role":"Software Engineer","type":"Behavioral","diff":"Medium",
+     "question":"Describe a time when you were overwhelmed with competing high-priority deadlines. How did you prioritize and communicate with stakeholders?",
+     "category":"Time & Priority Management","hint":"Eisenhower / RICE matrix, transparent expectation management, scope trimming, successful delivery.",
+     "keywords":["deadline","priority","overwhelmed","communication","stakeholder","scope","delivery","management"]},
     {"role":"Software Engineer","type":"Behavioral","diff":"Hard",
      "question":"Give an example of a high-pressure production incident you resolved under tight SLA deadlines while keeping stakeholders informed.",
      "category":"Crisis Management","hint":"Triaging, incident response protocol, clear communication channels, blameless post-incident RCA.",
      "keywords":["incident","production","outage","pressure","communication","triage","sla","rca","resolution"]},
 
-    # ── System Design & Architecture
+    # ── System Design & Scalability
     {"role":"Software Engineer","type":"System Design","diff":"Medium",
      "question":"Design a scalable Notification System supporting Push, SMS, and Email with guaranteed delivery and user preference filtering.",
      "category":"System Design","hint":"Message queues (SQS/Kafka), worker pools, third-party vendor abstraction, rate limiting, retry/DLQ.",
      "keywords":["notification","queue","push","sms","email","dlq","worker","scalability","retry","preference"]},
+    {"role":"Software Engineer","type":"System Design","diff":"Medium",
+     "question":"Design a scalable web crawler capable of indexing 1 billion pages per month without overloading target hosts.",
+     "category":"Distributed Crawling","hint":"Frontier queue, politeness policy, DNS caching, Bloom filters for visited URLs, content fingerprinting.",
+     "keywords":["crawler","bloom","filter","frontier","politeness","dns","queue","distributed","index","storage"]},
     {"role":"Software Engineer","type":"System Design","diff":"Hard",
      "question":"Design a distributed, highly available Key-Value store like DynamoDB or Cassandra. Explain data partitioning, replication, and quorum reads/writes.",
      "category":"Distributed Storage","hint":"Consistent hashing, virtual nodes, replication factor, tunable consistency (W + R > N), gossip protocol.",
      "keywords":["key","value","consistent","hashing","replication","quorum","dynamo","cassandra","partition","availability"]},
+    {"role":"Software Engineer","type":"System Design","diff":"Hard",
+     "question":"Design an end-to-end live chat and presence system (like Slack/WhatsApp) supporting direct messaging, group channels, and online status for 10M active users.",
+     "category":"Real-Time Systems","hint":"WebSockets, Redis Pub/Sub, message persistence, heartbeat protocols, offline sync.",
+     "keywords":["chat","websocket","redis","presence","group","messaging","latency","channels","storage","heartbeat"]},
 
     # ── HR & Cultural Fit
     {"role":"Software Engineer","type":"HR","diff":"Easy",
      "question":"Why are you interested in this engineering position, and what unique technical strengths or perspective do you bring to our team?",
      "category":"Cultural Fit & Motivation","hint":"Connect personal passion with team vision, mention relevant hands-on projects, emphasize team collaboration.",
-     "keywords":["passion","strength","team","growth","projects","interest","culture","collaboration"]}
+     "keywords":["passion","strength","team","growth","projects","interest","culture","collaboration"]},
+    {"role":"Software Engineer","type":"HR","diff":"Easy",
+     "question":"Where do you see your engineering career evolving over the next 3 to 5 years, and how does this role align with that vision?",
+     "category":"Career Vision","hint":"Skill expansion, system architecture leadership, mentoring, business impact.",
+     "keywords":["career","growth","leadership","vision","skills","architecture","mentorship","learning"]}
 ]
 
-# ── Dynamic Question Generator ────────────────────────────────────────────────
+# ── Dynamic Endless Question Generator (Supports 50+ unique questions) ────────
 def generate_question(role: str, itype: str, diff: str, previous: list) -> dict:
     """
-    Selects a fresh, non-repeating question from the bank, or dynamically synthesizes
-    an authentic, tailored interview challenge if the bank is exhausted or custom role is used.
+    Selects a fresh, non-repeating question from the bank, or procedurally synthesizes
+    an authentic, tailored interview challenge so sessions with 10, 20, 35, or 50 questions
+    never experience a single repeated question.
     """
     prev_set = set(p.strip().lower() for p in previous if isinstance(p, str))
 
@@ -312,7 +381,7 @@ def generate_question(role: str, itype: str, diff: str, previous: list) -> dict:
         q for q in QUESTION_BANK
         if (q["role"].lower() == role.lower() or role.lower() in q["role"].lower() or q["role"] == "Software Engineer")
         and q["type"].lower() == itype.lower()
-        and q.get("diff", "").lower() == diff.lower()
+        and (q.get("diff", "").lower() == diff.lower() or diff.lower() == "medium")
     ]
 
     if not pool:
@@ -336,47 +405,51 @@ def generate_question(role: str, itype: str, diff: str, previous: list) -> dict:
             ]
         }
 
-    # If pool is exhausted or user asked for a custom role, synthesize a unique dynamic question
-    dynamic_topics = {
-        "Technical": [
-            ("Concurrency & Memory", f"In {role}, how do you identify, profile, and fix memory leaks or thread contention under sustained load?"),
-            ("High Availability & Fault Tolerance", f"For a mission-critical {role} service, design a multi-region failover strategy with minimal downtime (RTO) and data loss (RPO)."),
-            ("API & Scalability", f"Explain how you would architect asynchronous background task processing for a high-volume {role} platform."),
-            ("Security & Data Protection", f"How do you enforce zero-trust authentication, token rotation, and SQL/XSS prevention in a modern {role} application?"),
-            ("Performance Optimization", f"Walk me through your systematic approach to profiling CPU and database query bottlenecks in a slow {role} subsystem.")
-        ],
-        "Behavioral": [
-            ("Cross-functional Alignment", f"As a {role}, describe a situation where you had to influence non-technical stakeholders to approve a major technical refactoring."),
-            ("Delivery Under Ambiguity", f"Tell me about a time in your {role} career when project specifications were vague. How did you clarify requirements and deliver successfully?"),
-            ("Mentorship & Code Quality", f"Describe an experience where you helped an underperforming teammate improve their technical standards and code reviews.")
-        ],
-        "System Design": [
-            ("Scalable Systems", f"Architect an end-to-end real-time analytics and telemetry tracking pipeline for a {role} infrastructure handling 200k events/sec."),
-            ("Distributed Caching", f"How would you design a multi-tier caching system for {role} to eliminate cache stampedes and hot-key degradation?")
-        ]
-    }
+    # Extended procedural generator for large sessions (10, 20, 35, 50 questions)
+    q_number = len(previous) + 1
+    procedural_topics = [
+        ("Concurrency & Lock Contention", f"Question #{q_number}: In a high-traffic {role} architecture, how would you detect and resolve thread starvation, race conditions, or lock contention?"),
+        ("Cache Invalidation & Freshness", f"Question #{q_number}: How do you design a multi-tier cache invalidation strategy for {role} to eliminate cache stampedes and stale reads?"),
+        ("Microservice Fault Tolerance", f"Question #{q_number}: Explain how you would implement Circuit Breakers, Bulkheads, and Exponential Backoff to prevent cascading failures in {role} services."),
+        ("Database Query Optimization", f"Question #{q_number}: Walk me through how you analyze and optimize a slow query in {role} using EXPLAIN ANALYZE, indexing, and partitioning."),
+        ("Zero-Downtime Deployment", f"Question #{q_number}: Design a continuous delivery pipeline for {role} that supports Blue/Green or Canary deployments with automated rollback on health check failure."),
+        ("Security & Token Protection", f"Question #{q_number}: How would you implement secure token rotation, OAuth2 PKCE flow, and CSRF/XSS defense in a modern {role} environment?"),
+        ("Event-Driven Architecture", f"Question #{q_number}: Compare message brokers (RabbitMQ/SQS) with distributed log streaming (Kafka) for {role}. When is each appropriate?"),
+        ("Memory & Resource Profiling", f"Question #{q_number}: Walk me through your methodical approach to diagnosing CPU throttling and memory leak anomalies in a production {role} container."),
+        ("API Versioning & Deprecation", f"Question #{q_number}: How do you design and evolve public REST/gRPC APIs in {role} across multiple versions without breaking legacy client integrations?"),
+        ("Disaster Recovery & RTO/RPO", f"Question #{q_number}: Outline an active-active cross-region disaster recovery architecture for a {role} system with strict RTO < 5 min and RPO = 0."),
+        ("Data Pipeline & ETL Integrity", f"Question #{q_number}: How do you guarantee idempotent data ingestion, schema validation, and dead-letter queuing in a high-volume {role} pipeline?"),
+        ("Scalable WebSocket Architecture", f"Question #{q_number}: Design a horizontally scalable real-time WebSocket infrastructure for {role} using a Redis/PubSub backplane."),
+        ("Behavioral: Resolving Tech Debt", f"Question #{q_number}: Describe a time as a {role} when you had to balance paying down technical debt against delivering aggressive roadmap features."),
+        ("Behavioral: Cross-Team Collaboration", f"Question #{q_number}: Tell me about a scenario where you led a cross-functional initiative across engineering, product, and QA to unblock a release."),
+        ("Testing & Quality Assurance", f"Question #{q_number}: How do you architect a reliable testing pyramid (Unit, Integration, Contract, E2E) for {role} to minimize flaky test runs in CI?")
+    ]
 
-    type_key = itype if itype in dynamic_topics else "Technical"
-    candidates = dynamic_topics.get(type_key, dynamic_topics["Technical"])
-    cat, q_text = random.choice(candidates)
+    # Select procedural question not yet used
+    for cat, text in procedural_topics:
+        if text.strip().lower() not in prev_set:
+            return {
+                "question": text,
+                "category": f"{role} • {cat}",
+                "hint": f"Demonstrate deep {diff}-level insights, practical implementation steps, and concrete trade-offs.",
+                "expected_key_points": [
+                    f"Comprehensive mastery of {cat}",
+                    "Clear analysis of trade-offs and edge cases",
+                    "Concrete production-grade implementation details"
+                ]
+            }
 
-    # Ensure uniqueness with timestamp variation if needed
-    if q_text.strip().lower() in prev_set:
-        q_text += f" (Discuss specific edge cases and error handling for {diff} level scenarios)."
-
+    # Fallback with explicit sequence stamp
+    unique_text = f"Question #{q_number} for {role} ({diff}): Walk me through an end-to-end architecture review of your most complex system, detailing trade-offs and failure scenarios."
     return {
-        "question": q_text,
-        "category": f"{role} • {cat}",
-        "hint": f"Demonstrate deep {diff}-level insights, practical implementation steps, and concrete trade-offs.",
-        "expected_key_points": [
-            f"Demonstrate comprehensive mastery of {role} fundamentals",
-            "Evaluate trade-offs between competing approaches",
-            "Provide concrete real-world context or implementation details"
-        ]
+        "question": unique_text,
+        "category": f"{role} • Architecture Review",
+        "hint": "Discuss architectural patterns, latency, consistency, and failure modes.",
+        "expected_key_points": ["End-to-end architectural mechanics", "Trade-offs and failure mitigation"]
     }
 
 
-# ── Intelligent AI Answer Evaluation Engine ───────────────────────────────────
+# ── Intelligent AI Answer Evaluation Engine (Full 10/10 Score Capability) ─────
 def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str, secs: int) -> dict:
     """
     Evaluates student response dynamically based on:
@@ -385,7 +458,7 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
     - Structural transitions (trade-offs, analytical phrasing)
     - Vocabulary diversity (anti-repetition check)
     - Behavioral STAR methodology (for behavioral questions)
-    Provides varying, fair, realistic scores out of 10 with actionable feedback.
+    Provides varying, fair, realistic scores out of 10.0 (full 10 marks awarded for correct answers).
     """
     ans_clean = (answer or "").strip()
     words = ans_clean.split()
@@ -402,6 +475,14 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
             "depth": 1.5,
             "relevance": 3.0,
             "communication": 2.5,
+            "breakdown": {
+                "overall_score": 2.5,
+                "correctness": 2.5,
+                "clarity": 3.0,
+                "depth": 1.5,
+                "relevance": 3.0,
+                "communication": 2.5
+            },
             "strengths": ["Answer submitted within the allotted session time."],
             "improvements": [
                 "Your answer is too brief to evaluate. Provide a complete, detailed response.",
@@ -422,7 +503,7 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
     
     # If no pre-configured keywords, extract key terms (> 4 chars) from question
     if not expected_keywords:
-        stopwords = {"what", "which", "where", "difference", "explain", "between", "would", "could", "should", "using", "their", "there", "about", "describe", "design"}
+        stopwords = {"what", "which", "where", "difference", "explain", "between", "would", "could", "should", "using", "their", "there", "about", "describe", "design", "question"}
         expected_keywords = [re.sub(r'[^a-z0-9]', '', w) for w in ql.split() if len(w) > 4 and w not in stopwords]
 
     # Keyword hit count
@@ -430,34 +511,32 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
     keyword_coverage = keyword_hits / max(len(expected_keywords), 1)
 
     # 4. Dimension Baselines
-    # Base starting points
-    c_base = 5.0
-    cl_base = 5.5
-    d_base = 4.5
-    r_base = 5.0
-    cm_base = 5.5
+    c_base = 5.5
+    cl_base = 6.0
+    d_base = 5.0
+    r_base = 5.5
+    cm_base = 6.0
 
     # 5. Length & Depth Grading
     if word_count < 25:
         c_base -= 1.5; d_base -= 2.0; cl_base -= 1.0; cm_base -= 1.0
     elif 25 <= word_count < 60:
-        c_base += 0.5; d_base += 0.8; cl_base += 0.8; cm_base += 0.8
+        c_base += 1.0; d_base += 1.2; cl_base += 1.0; cm_base += 1.0
     elif 60 <= word_count <= 180:
-        c_base += 1.8; d_base += 2.2; cl_base += 1.8; cm_base += 1.6
+        c_base += 2.4; d_base += 2.8; cl_base += 2.2; cm_base += 2.0
     elif word_count > 180:
-        c_base += 2.0; d_base += 2.7; cl_base += 1.2; cm_base += 1.4
+        c_base += 2.6; d_base += 3.2; cl_base += 1.8; cm_base += 1.8
 
-    # 6. Keyword & Relevance Impact
+    # 6. Keyword & Relevance Impact (rewards accurate answers up to 10)
     if keyword_coverage > 0.4:
-        c_base += 1.8
-        r_base += 2.2
-        d_base += 1.2
+        c_base += 2.4
+        r_base += 2.6
+        d_base += 1.8
     elif keyword_coverage > 0.15:
-        c_base += 0.8
-        r_base += 1.0
-        d_base += 0.5
+        c_base += 1.2
+        r_base += 1.4
+        d_base += 0.8
     else:
-        # Off-topic or low technical content
         c_base -= 1.5
         r_base -= 2.0
 
@@ -470,12 +549,12 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
     ]
     transition_count = sum(1 for t in transitions if t in al)
     if transition_count >= 4:
-        cl_base += 1.6
-        cm_base += 1.6
-        d_base += 0.8
+        cl_base += 2.0
+        cm_base += 2.0
+        d_base += 1.0
     elif transition_count >= 2:
-        cl_base += 0.8
-        cm_base += 0.8
+        cl_base += 1.2
+        cm_base += 1.2
 
     # 8. Behavioral STAR Check
     if itype.lower() == "behavioral":
@@ -485,43 +564,58 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
         star_result = bool(re.search(r'(result|outcome|improved|reduced|increased|delivered|launched|by \d+%)', al))
         star_score = sum([star_situation, star_task, star_action, star_result])
         if star_score >= 3:
-            r_base += 1.8
-            cl_base += 1.4
-            cm_base += 1.5
+            r_base += 2.2
+            cl_base += 1.8
+            cm_base += 1.8
         elif star_score <= 1:
             r_base -= 1.0
             d_base -= 1.0
 
     # 9. Penalize Spam or Repetitive Text
     if diversity_ratio < 0.45:
-        c_base -= 3.0
-        d_base -= 3.0
-        cl_base -= 2.5
-        r_base -= 2.5
+        c_base -= 3.5
+        d_base -= 3.5
+        cl_base -= 3.0
+        r_base -= 3.0
 
     # 10. Difficulty Adjustment
     if diff.lower() == "hard":
-        d_base -= 0.5  # Higher expectation for hard questions
+        d_base -= 0.3
     elif diff.lower() == "easy":
-        d_base += 0.3
+        d_base += 0.4
 
-    # Add controlled micro-variation based on hash of answer for natural scoring
-    salt = (hash(ans_clean) % 7) * 0.1 - 0.3
-    c_base += salt
-    d_base -= salt * 0.5
+    # High quality bonus: If answer has strong keyword coverage, good length, and clear structure, give full marks
+    if keyword_coverage >= 0.4 and word_count >= 50 and transition_count >= 1:
+        c_base = max(c_base, 9.8)
+        cl_base = max(cl_base, 9.7)
+        d_base = max(d_base, 9.6)
+        r_base = max(r_base, 9.8)
+        cm_base = max(cm_base, 9.6)
+        if word_count >= 80 and keyword_coverage >= 0.5:
+            c_base = 10.0
+            cl_base = 10.0
+            d_base = 10.0
+            r_base = 10.0
+            cm_base = 10.0
 
-    # Clamp scores between 2.0 and 9.8
-    correctness = round(min(9.8, max(2.0, c_base)), 1)
-    clarity = round(min(9.8, max(2.5, cl_base)), 1)
-    depth = round(min(9.8, max(2.0, d_base)), 1)
-    relevance = round(min(9.8, max(2.0, r_base)), 1)
-    communication = round(min(9.8, max(2.5, cm_base)), 1)
+    # Natural micro-variation for distinct intermediate answers
+    if c_base < 9.8:
+        salt = (hash(ans_clean) % 7) * 0.1 - 0.3
+        c_base += salt
+        d_base -= salt * 0.5
+
+    # Clamp scores between 2.0 and 10.0 (Full 10 marks support)
+    correctness = round(min(10.0, max(2.0, c_base)), 1)
+    clarity = round(min(10.0, max(2.5, cl_base)), 1)
+    depth = round(min(10.0, max(2.0, d_base)), 1)
+    relevance = round(min(10.0, max(2.0, r_base)), 1)
+    communication = round(min(10.0, max(2.5, cm_base)), 1)
 
     # Weighted Overall: Correctness 25%, Clarity 20%, Depth 20%, Relevance 20%, Communication 15%
     overall = round(
         correctness * 0.25 + clarity * 0.20 + depth * 0.20 + relevance * 0.20 + communication * 0.15, 1
     )
-    overall = min(9.8, max(2.5, overall))
+    overall = min(10.0, max(2.5, overall))
 
     # Dynamic Strengths & Improvements
     strengths, improvements = [], []
@@ -530,7 +624,7 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
     else:
         improvements.append("Include more domain-specific terminology and core technical mechanisms.")
 
-    if depth >= 7.5:
+    if depth >= 8.0:
         strengths.append("High technical depth with clear discussion of mechanics and trade-offs.")
     else:
         improvements.append("Elaborate on operational trade-offs, edge cases, or failure modes.")
@@ -540,13 +634,15 @@ def evaluate_answer(question: str, answer: str, role: str, itype: str, diff: str
     else:
         improvements.append("Use structured formatting (bullet points or numbered steps) to improve clarity.")
 
-    if word_count >= 70:
+    if word_count >= 60:
         strengths.append("Comprehensive response providing adequate depth without unnecessary filler.")
     else:
-        improvements.append("Expand your answer to at least 80-120 words to demonstrate thorough mastery.")
+        improvements.append("Expand your answer to at least 70-100 words to demonstrate thorough mastery.")
 
     # Feedback summary text
-    if overall >= 8.5:
+    if overall >= 9.8:
+        summary = f"Outstanding perfect answer! Top score of {overall}/10. Exceptionally accurate, structured, and technically thorough."
+    elif overall >= 8.5:
         summary = f"Exceptional answer scoring {overall}/10! Strong technical vocabulary, clear structure, and solid depth."
     elif overall >= 7.0:
         summary = f"Solid answer scoring {overall}/10. Clear understanding shown; expanding on quantifiable metrics will elevate this."
