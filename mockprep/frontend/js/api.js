@@ -1,8 +1,4 @@
-/**
- * MockPrep REST API Client
- * Handles communication with the FastAPI backend, JWT Authorization,
- * and seamless local offline fallback if the Python server is not yet started.
- */
+
 
 const API_BASE = window.location.origin + '/api';
 
