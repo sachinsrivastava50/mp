@@ -75,11 +75,11 @@ const API = {
   offlineFallback(endpoint, options) {
     const body = options.body ? JSON.parse(options.body) : {};
 
-    if (endpoint === '/auth/login' || endpoint === '/auth/register') {
+    if (endpoint === '/auth/login' || endpoint === '/auth/register' || endpoint === '/auth/demo') {
       const mockUser = {
         id: 101,
         name: body.name || 'User',
-        email: body.email || 'user@mockprep.com',
+        email: body.email || 'demo.student@mockprep.com',
         created_at: new Date().toISOString()
       };
       this.setToken('mock_jwt_token_' + Date.now());
@@ -197,6 +197,50 @@ const API = {
       const wordCount = words.length;
       const lower = ans.toLowerCase();
 
+      const evasive = ['i don\'t know', 'dont know', 'no idea', 'not sure', 'skip', 'pass', 'n/a', 'none', 'hello', 'hi', 'test', 'idk', 'ok', 'yes', 'no'];
+      const isEvasive = evasive.some(p => lower === p || lower.startsWith(p + ' ') || lower.endsWith(' ' + p));
+
+      // 0 Marks for invalid, blank, trivial, or evasive text
+      if (wordCount < 4 || isEvasive) {
+        const result = {
+          id: Date.now(),
+          session_id: body.session_id,
+          score: 0.0,
+          breakdown: { overall_score: 0.0, correctness: 0.0, clarity: 0.0, depth: 0.0, relevance: 0.0, communication: 0.0 },
+          strengths: [],
+          improvements: [
+            'Your answer is invalid or too brief to evaluate.',
+            'Address the specific technical question asked rather than leaving placeholder text.',
+            'Explain the fundamental concepts, underlying mechanics, and trade-offs.'
+          ],
+          feedback_summary: 'Invalid answer scoring 0.0/10. The response is blank, trivial, or placeholder text. Please answer thoroughly.',
+          model_answer: 'A strong answer must define the concept, outline execution mechanics, and contrast trade-offs.'
+        };
+        return result;
+      }
+
+      // Check tech term hits
+      const techTerms = ['because', 'therefore', 'latency', 'performance', 'trade-off', 'complexity', 'memory', 'cpu', 'cache', 'thread', 'index', 'hash', 'queue', 'process', 'database', 'transaction', 'lock', 'event', 'query', 'stack', 'heap'];
+      const termHits = techTerms.filter(t => lower.includes(t)).length;
+
+      // 0 or 1 Mark for completely off-topic response
+      if (termHits === 0) {
+        const scoreVal = wordCount < 25 ? 0.0 : 1.0;
+        return {
+          id: Date.now(),
+          session_id: body.session_id,
+          score: scoreVal,
+          breakdown: { overall_score: scoreVal, correctness: scoreVal, clarity: scoreVal, depth: 0.0, relevance: 0.0, communication: scoreVal },
+          strengths: [],
+          improvements: [
+            'Your response is off-topic. It does not contain any relevant concepts for this question.',
+            'Focus on the actual technical topic asked in the interview prompt.'
+          ],
+          feedback_summary: `Irrelevant answer scoring ${scoreVal}/10. The response does not address the question asked.`,
+          model_answer: 'A relevant answer must directly address the question by discussing the core technical mechanics.'
+        };
+      }
+
       // Dynamic Intelligent Scoring
       let correctness = 6.0;
       let clarity = 6.5;
@@ -204,8 +248,8 @@ const API = {
       let relevance = 6.0;
       let communication = 6.0;
 
-      if (wordCount < 15) {
-        correctness = 2.8; depth = 2.0; clarity = 3.5; relevance = 3.0; communication = 3.0;
+      if (wordCount < 20) {
+        correctness = 2.0; depth = 1.0; clarity = 2.5; relevance = 2.0; communication = 2.0;
       } else if (wordCount < 40) {
         correctness += 0.5; depth += 0.8; clarity += 0.5;
       } else if (wordCount <= 120) {
@@ -354,6 +398,15 @@ const API = {
     const res = await this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password })
+    });
+    this.setToken(res.access_token);
+    this.setUser(res.user);
+    return res;
+  },
+
+  async demoLogin() {
+    const res = await this.request('/auth/demo', {
+      method: 'POST'
     });
     this.setToken(res.access_token);
     this.setUser(res.user);
